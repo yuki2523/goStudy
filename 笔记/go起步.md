@@ -468,6 +468,37 @@ func main() {
 
 ```
 
+**综合练习：判断是否为回文**
+
+```go
+func isSameText(text string) (result bool) {
+	textList := []rune(text)
+	// fmt.Printf("%T,%v,%d,%d\n", textList, textList, len(textList), cap(textList))
+	result = false
+	left := 0
+	right := len(textList) - 1
+	for left <= right {
+		if textList[left] != textList[right] {
+			return
+		}
+		left++
+		right--
+	}
+	result = true
+	return
+}
+
+func main() {
+	var str1 = "晴天天晴"
+	var str2 = "晴天不天晴"
+	var str3 = "晴天不是天晴"
+
+	fmt.Println(isSameText(str1)) // true
+	fmt.Println(isSameText(str2)) // true
+	fmt.Println(isSameText(str3)) // false
+}
+```
+
 #### 5.4、字符，字符串，字节的区别
 
 * 字符：使用`''`单引号包裹的，单个的字母，符合，或者文字(各种语言都可以)
@@ -799,6 +830,8 @@ fmt.Printf("%b = %d\n", o, o) // 1010 = 10
 
 #### 1.1、数组的初始化
 
+**注意: `[20]int`、`[30]int`，虽然都是`int`，但是长度不同，也是不同的类型**
+
 ```go
 var arr1 [3]int16
 var boolArr [3]bool
@@ -850,6 +883,11 @@ for index, value := range citys {
 ```
 
 #### 1.3、二维数组
+
+**注意：**
+
+- 多维数组，只有最外层可以写`[...]`
+- 下面这个，可以写成`[3][2]int`，也可以是`[...][2]int`，但是`[...][...]int`是不可以的
 
 ```go
 // 二维数组
@@ -909,7 +947,7 @@ fmt.Printf("切片s2的长度:%d\n", len(s2))      // 切片s2的长度:3
 fmt.Printf("切片s2的值:%v,类型为:%T\n", s2, s2) // 切片s2的值:[1 2 3],类型为:[]int
 ```
 
-1. **切片还可以通过数组切割获得**
+#####2.1.1、切片还可以通过数组切割获得
 
 ```go
 // 切片可以以一个数组作为其依据的底层数组
@@ -925,9 +963,9 @@ fmt.Printf("%v为len(s5):%d,cap(s5):%d\n", s5, len(s5), cap(s5)) // [7 9 11]为l
 
 - `arr[start, end]`遵从左闭右开的规则
 - s3的cap容量为5，s4的cap容量为6，而s5的cap容量为3
-- 说明cap的算法是以其依赖的数组的长度的，算法为`start`到`len(arr)`之间有的数组成员的数量,和`end`没什么关系
+- **说明cap的算法是以其依赖的数组的长度的，算法为`start`到`len(arr)`之间有的数组成员的数量**,和`end`没什么关系
 
-2. **还有切片切割出来的切片**
+#####2.1.2、还有切片切割出来的切片
 
 ```go
 arr := [...]int{1, 3, 5, 7, 9, 11}
@@ -939,7 +977,7 @@ fmt.Printf("%v为len(s7):%d,cap(s7):%d\n", s7, len(s7), cap(s7)) // [3 5]为len(
 
 - 因为`s7`所依赖的底层数组仍然是`arr`,所以任然遵守`start`到`len(arr)`的原则，`cap(s7)`为5
 
-3. **由于切片是引用数据类型，而且依赖于一个底层数组，那么通过修改底层数组，观察依赖它的切片的变化**
+#####2.1.3、由于切片是引用数据类型，而且依赖于一个底层数组，那么通过修改底层数组，观察依赖它的切片的变化
 
 ```go
 arr1 := [...]int{1, 2, 3, 4}
@@ -951,8 +989,9 @@ fmt.Printf("修改后的,sli1:%v,sli2:%v\n", sli1, sli2) // 修改后的,sli1:[1
 ```
 
 - 可以发现，底层数组的数据变化，那么依赖它的切片全部跟着变化
+- 如果通过切片修改值，实际上就是在修改底层数组里的值，切片和底层数组双向影响
 
-4. **如果修改切片的数据，那么由这个切片再切出来的切片也会发生变化**
+#####2.1.4、如果修改切片的数据，那么由这个切片再切出来的切片也会发生变化
 
 ```go
 arr1 := [...]int{1, 2, 3, 4}
@@ -1061,7 +1100,7 @@ for index, value := range s6 {
 
 #### 3.1、`append`追加元素时`cap`的处理
 
-**1. 源码：**
+#####3.1.1、 源码：
 
 ```go
 newcap := old.cap // 新的newcap = 2 * 原先的cap
@@ -1092,9 +1131,12 @@ if cap > doublecap { // 如果新申请的newcap*2小于原先的oldcap，那么
 * 如果新申请的`newcap*2`小于原先的`oldcap`，那么`cap`不变
 * 如果旧切片的长度小于1024,那么新的`newcap`为原先`oldcap`的二倍
 * `newcap`大于0且小于原先`cap`，循环执行`newcap += newcap / 4`,到`newcap >= oldcap`为止
+  * 注意一点，是每次在**已经增加的基础上**再增加`1/4`
 * 如果新的`newcap`小于等于0，那么`cap`不变
 
-**2. 示例：**
+**在补充说明一点，扩容的值类型不同，扩容策略也有区别**
+
+#####3.1.2、 示例：
 
 ```go
 // append 为切片追加元素
@@ -1111,7 +1153,7 @@ fmt.Printf("len:%d,cap:%d\n", len(s1), cap(s1)) // len:4,cap:6
 fmt.Printf("s1:%v\n", s1) // s1:[芜湖 合肥 六安 上海]
 ```
 
-**3. `slice变量名...`为拆开切片，这样可以一次性`append`多个元素**
+#####3.1.3、 `slice变量名...`为拆开切片，这样可以一次性`append`多个元素
 
 - 当然直接在`append`后面多写几个参数传入也是可以的
 
@@ -1126,7 +1168,26 @@ fmt.Printf("len:%d,cap:%d\n", len(s2), cap(s2)) // len:8,cap:8
 // 这种情况下，新申请的 cap 应该是 4
 ```
 
+#### 3.2、`append`还可以自动初始化没有初始化的切片变量
+
+```go
+var a []int
+fmt.Printf("value:%v,len:%d,cap:%d\n", a, len(a), cap(a)) // value:[],len:0,cap:0
+a = append(a, 1, 2, 3)
+fmt.Printf("value:%v,len:%d,cap:%d\n", a, len(a), cap(a)) // value:[1 2 3],len:3,cap:4
+```
+
+- 可以看到，`var`出来的切片变量，刚刚开始是`nil`，但是使用`append`追加元素后，它会被自动初始化，也就是分配到相应的内存空间
+
 ###4、`copy`，针对引用数据类型切片的拷贝
+
+- 把`a`里的值拷贝到`b`里去:`copy(b, a)`
+- 语法：`copy(目标切片, 原切片)`
+- 这样两个切片各种都是一块独立的内存空间，互相不会产生影响了
+- 使用`copy`时，`目标切片`一定要是`make`出来的，不然没有内存空间，就是`nil`,那样是拷贝不进去的
+  - 也就是说，直接`var`声明变量，没有初始化的话，`copy`后还是`[]`，也就是`nil`
+- 而且`copy`也不会帮你自动扩容，那么目标切片一定是要大于等于原切片的长度(`len`)
+  - 拷贝时只会替换索引相同的值，目标切片后面多出来的是不变的
 
 ```go
 // 赋值拷贝的方式
@@ -1148,6 +1209,14 @@ fmt.Println(s3, s4) // [4 5 6] [4 5 6]
 s4[0] = 400
 fmt.Println(s3, s4) // [4 5 6] [400 5 6]
 // 这种情况，两个变量指向的是两块完全不同的内存空间，因此互相不相干
+
+s5 := []int{1, 2, 3}
+s6 := make([]int, 5, 10)
+s6[1] = 100
+s6[4] = 10
+copy(s6, s5)
+fmt.Println(s6) // [1 2 3 0 10]
+// 目标切片是可以长于原切片的，之后拷贝进来，之后替换相同索引的值，后面多出来的不变
 ```
 
 ###5、切片的补充(从切片里删值之活用切片切割和`append`、切片和底层数组之间的关系)
@@ -1223,6 +1292,8 @@ fmt.Println(a) // [0 0 0 0 0 0 1 2 3 4 5 6 7 8 9]
 - `&变量`:取地址值
 - `*地址值`:通过地址值取变量
 
+**注意：Go的指针的地址值，是只读的，不能修改**
+
 ```go
 a := 10
 // 现在 b 和 c 的数据类型是 *int,存着a的地址值
@@ -1290,7 +1361,8 @@ fmt.Println(ageList == nil) // true
 
 - 为了获取有内存空间的`map`数据类型的数据，可以使用`make`函数
 - 语法: `make(map[keyType]valueType, 容量)`
-  - **注意一点，容量为最大可存入容量，len的时候返回的结果是当前已有的键值对数**
+  - **注意一点，容量为最大可存入容量，`len`的时候返回的结果是当前已有的键值对数**
+  - 就算实际存值时容量超出了定义时的容量，也会自动扩容，但是会对运行速度造成损耗，因此定义时可以大概估算一下要用多大空间，然后再写上容量
 
 ```go
 ageList := make(map[string]int, 10)
@@ -1346,7 +1418,35 @@ for Name := range ageList {
 // ying
 ```
 
-#### 7.5、`map`综合练习，统计单词数
+#### 7.5、`delete`删除`map`里的键值对
+
+**delete 删除map里的键值对**
+
+- 语法：delete(目标map, key)
+- key存在，就去删
+- key不存在，就什么都不做，不会报错的
+
+```go
+var age map[string]int
+age = make(map[string]int, 3)
+age["hcy"] = 19
+age["ying"] = 16
+age["yang"] = 20
+age["yuki"] = 14
+fmt.Println(age) // map[hcy:19 yang:20 ying:16 yuki:14]
+
+// delete 删除map里的键值对
+// 语法：delete(目标map, key)
+// key存在，就去删
+delete(age, "hcy")
+fmt.Println(age) // map[yang:20 ying:16 yuki:14]
+
+// key不存在，就什么都不做，不会报错的
+delete(age, "nameless")
+fmt.Println(age) // map[yang:20 ying:16 yuki:14]
+```
+
+#### 7.6、`map`综合练习，统计单词数
 
 ```go
 // 练习 : 统计单词数量
@@ -1366,11 +1466,11 @@ for _, value := range wordList {
 }
 ```
 
-#### 7.6、`map`和`slice`综合使用
+#### 7.7、`map`和`slice`综合使用
 
 **要注意一点，它们都是引用数据类型。因此都需要`make`申请内存**
 
-##### 7.6.1、在`map`里存`slice`
+##### 7.7.1、在`map`里存`slice`
 
 ```go
 // 1、在map里存入slice
@@ -1382,7 +1482,7 @@ m1["first"][1] = 100
 fmt.Println(m1["first"][1]) // 100
 ```
 
-##### 7.6.2、在`slice`里存`map`
+##### 7.7.2、在`slice`里存`map`
 
 - 这种情况下，两个`make`显得格外重要
 
@@ -1449,7 +1549,7 @@ func unsetLengthParam(x int, y ...int) {
 	fmt.Printf("不定长参数值:%v,类型:%T\n", y, y)
 }
 
-// 7、同类型的参数写在一起，只要写一次类型就可以了
+// 7、参数类型简写:同类型的参数写在一起，只要写一次类型就可以了
 func datatypeOnceWrite(x, y, z int, i, j string, p, q bool) {
 	fmt.Println(x, y, z, i, j, p, q)
 }
@@ -1465,6 +1565,513 @@ func main() {
 }
 
 ```
+
+**注意：Go里函数传参，传入的全是重新拷贝的值，不用担心数据是值类型还是引用数据类型**
+
+**再注意一点：Go中已命名的函数里不允许再定义已命名的函数，但是可以放匿名函数**
+
+### 2、`defer`
+
+#### 2.1、执行顺序
+
+- `defer`就像一个栈，把函数里前面加了`defer`的语句先压到栈里
+- 执行的顺序: 返回值 ret 赋值 => defer栈里的语句依次出栈执行 => 真正的返回 ret
+
+```go
+func deferTest() (ret int) {
+	// 有 defer 时，前面加了 defer 的语句会放到 defer栈内
+	// 返回值 ret 赋值 => defer栈里的语句依次出栈执行 => 真正的返回 ret
+	fmt.Println("start")
+	defer fmt.Println("deferFirst")
+	defer fmt.Println("deferSecond")
+	defer fmt.Println("deferThird")
+	fmt.Println("end")
+	return
+	// defer 给我的感觉很像是js里的回调队列，但是它这个是一个栈，等主线程执行完毕，再把栈里的语句逐句出栈执行
+}
+
+func main() {
+	deferTest()
+	// start
+	// end
+	// deferThird
+	// deferSecond
+	// deferFirst
+}
+```
+
+#### 2.2、一些刁难人的面试题
+
+#####2.2.1、提前指明了返回值变量名的情况
+
+```go
+func f1() (x int) { // 这个时候返回值是 x
+	defer func() {
+		x++
+	}()
+	return 5
+	// 看到return
+	// 先看看上面有没有声明返回值
+	// 发现有，也就是这里的 x
+	// 然后给 x 赋值为 5
+	// 之后再找 defer,发现有 defer,执行defer里的语句
+	// defer 里的语句是 x++，执行完后 x = 6
+	// 真正的返回出返回值 x ,输出的结果就是 6
+}
+```
+
+```go
+func f2() (x int) { // 这个时候返回值还是 x
+	fmt.Println(x)      // 0
+	defer func(x int) { // defer 虽然会暂时阻止其执行,但是参数会在这句决定好
+		x++
+		fmt.Println(x, "内部的") // 1 内部的
+	}(x) // 在执行到这个函数时,x的值为0,因此里面 x++ 后,打印出来的 x 值为 1
+	defer func() { // 这个就又不同了,因为在这里根本就没有参数传进来,那么自然是使用外层函数作用域的 x
+		fmt.Println(x) // 5
+	}()
+	return 5
+}
+```
+
+```go
+func f4() (y int) { // 这个和没有指明返回值的变量名其实是可以归为一类的
+	x := 5
+	defer func() {
+		x++
+		fmt.Println(x, "inner") // 6 inner
+	}()
+	return y
+	// 看到return,先是给返回值 y 赋值为 x = 5
+	// 之后再执行 defer, x++ 之后 x = 6
+	// 最后再返回返回值 y = 5
+}
+```
+
+##### 2.2.2、没有提前指明返回值变量名
+
+```go
+func f3() int { // 这里没有指定返回值的变量名
+	// 没指明返回值名字时,可以认为它自己产生了一个返回值变量名为 ret
+	x := 5
+	defer func() {
+		x++
+		fmt.Println(x, "inner") // 6 inner
+	}()
+	return x
+	// 看到return,先是给返回值 ret 赋值为 x = 5
+	// 之后再执行 defer, x++ 之后 x = 6
+	// 最后再返回返回值 ret = 5
+}
+```
+
+#### 2.3、再补充一个`defer`的练习
+
+**为了说明一件事，`defer`后的语句，如果需要参数或者数据什么的，都是安装执行到这句时的数据来算的**
+
+```go
+func calc(index string, a, b int) int {
+	var result = a + b
+	fmt.Println(index, a, b, result)
+	return result
+}
+
+func main() {
+	var a = 1
+	var b = 2
+	defer calc("1", a, calc("10", a, b)) // 算完参数后这步被先压入栈中
+	// 10 1 2 3 // 参数要先被算出来，所以到这步就执行了calc("10", a, b) = 3
+
+	a = 0
+	defer calc("2", a, calc("20", a, b)) // 算完参数后这步被再压入栈中
+	// 20 0 2 2 // 参数要先被算出来，所以到这步就执行了calc("20", a, b) = 2
+
+	b = 1 // 这句 b 的赋值是没用的，前面位置需要的参数都以那个位置的参数为准
+	// 接下来开始执行栈里的代码
+	// 先执行 calc("2", a, calc("20", a, b)) => calc("2", 0, 2)
+	// 2 0 2 2
+	// 再执行 calc("1", a, calc("10", a, b)) => calc("1", 1, 3)
+	// 1 1 3 4
+}
+
+// main函数的结果,就如上面的分析一样
+// 10 1 2 3
+// 20 0 2 2
+// 2 0 2 2
+// 1 1 3 4
+
+```
+
+- `defer`注册时就会把当前状态全部带入进去，只不过是执行放在最后了	
+
+### 3、变量和函数作用域
+
+#### 3.1、全局变量
+
+- 全局变量会直接声明和赋值都提升到最上面
+
+```go
+package main
+
+import "fmt"
+
+func f1() {
+	// 全局变量会直接声明和赋值都提升到最上面
+	fmt.Println(a) // 100
+	// b，c都是局部变量，不支持变量提升，两个undefined
+	// fmt.Println(b)
+	// fmt.Println(c)
+	// var c = 300
+}
+
+func main() {
+	f1()
+	// var b = 200
+}
+
+var a = 100
+
+```
+
+#### 3.2、局部变量
+
+```go
+var a = 100
+
+func f1() {
+	var c = 300
+	fmt.Println(a) // 100
+	// fmt.Println(b) // 还是找不到，是undefined
+	fmt.Println(c)
+
+}
+
+func main() {
+	// var b = 200
+	f1()
+}
+```
+
+- **首先Go是不支持函数里再套函数名的函数的**
+- **这个作用域，根部不支持往外层函数找，就只有两个作用域，自己函数内部作用域，还有全局作用域，不存在外层函数作用域的说法**
+- **最后再提醒一点，上面的规则，对匿名函数，另当别论，匿名函数下面会单独说明**
+
+#### 3.3、块作用域
+
+- if和for有块作用域的特性，就和JavaScript里的let声明的变量一样
+
+```go
+if i := 10; i < 18 {
+	fmt.Println("快去上学")
+}
+fmt.Println(i) // undefined
+
+for j := 0; j < 10; j++ {
+	fmt.Println(j)
+}
+fmt.Println(j) // undefined
+
+if true {
+	var x = 10
+}
+fmt.Println(x) // undefined
+```
+
+### 4、函数也是一种数据类型
+
+#### 4.1、函数类型的举例展示
+
+**规则：**
+
+- 先把`func()`写上
+- 再把参数和返回值的类型写上
+
+```go
+func f1(x int, y string) (int, string) {
+	return x, y
+}
+
+func f2() {
+	fmt.Println("f2()")
+}
+
+func f3() int {
+	return 10
+}
+
+func f4(x int) {
+	fmt.Println(x)
+}
+
+func main() {
+	fmt.Printf("f1的类型为:%T\n", f1) // f1的类型为:func(int, string) (int, string)
+	fmt.Printf("f2的类型为:%T\n", f2) // f2的类型为:func()
+	fmt.Printf("f3的类型为:%T\n", f3) // f3的类型为:func() int
+	fmt.Printf("f4的类型为:%T\n", f4) // f4的类型为:func(int)
+}
+```
+
+#### 4.2、函数体也可以作为函数的参数和返回值
+
+- 下面这个例子有点Python里的装饰器的感觉了，一会讲闭包，基本上和下面这个也是一个套路的
+
+```go
+// 这个函数接收一个函数类型的参数,类型为 func(int) int
+// 返回一个函数类型的result
+func f5(function func(int) int) (result func(int) int) {
+	result = func(x int) int {
+        y := function(x) * 10
+		return y
+	}
+	return
+}
+
+func f6(x int) int {
+	return x + 10
+}
+
+func main() {
+	addAndMultiply := f5(f6)        // addAndMultiply这个函数先 + 10 再 * 10
+	fmt.Println(addAndMultiply(10)) // 200
+}
+```
+
+### 5、匿名函数
+
+####5.1、基本介绍
+
+**没有名字的函数**
+
+- 函数体，哪个语言都是一样的
+- 衍生出的立即执行函数，和js完全一样
+- 由此还会衍生出闭包，这个放在下一个专题里
+
+```go
+// 1、匿名函数
+// 这用法和js一样
+var f1 = func() {
+	fmt.Println("匿名函数,用变量f1接收")
+}
+
+func main() {
+	f1() // 匿名函数,用变量f1接收
+
+	// 2、立即执行函数
+	var x = 10
+	func(x int) {
+		fmt.Println(x * 2) // 20
+	}(x)
+}
+```
+
+#### 5.2、匿名函数作用域
+
+- 就一点记住，它不可能去`main`函数里找变量，**匿名函数里，它的外层函数，以及全局的变量是可以用的**
+
+```go
+// 匿名函数的作用域
+var a = 100
+
+func f2() {
+	var b = 200
+	func() {
+		var c = 300
+		fmt.Println(a) // 100
+		fmt.Println(b) // 200
+		fmt.Println(c) // 300
+        // 找不到变量 d，它在main里
+		// fmt.Println(d) // undefined
+	}()
+}
+
+func main() {
+	// var d = 400
+	f2()
+}
+
+```
+
+### 6、闭包
+
+####6.1、示例一：
+
+```go
+// 1、这个接口，只能传一个无参数有一个 int 类型返回值的函数进去
+func f1(function func() int) {
+	var sumResult = function()
+	fmt.Println(sumResult)
+}
+
+// 2、现在我手上有这样一个函数，它接收两个参数，返回一个值
+func sum(x, y int) int {
+	return x + y
+}
+
+// 3、我希望把 sum 函数传到 f1 里运行，但是函数类型不匹配
+// 		这个时候，可以使用闭包封装一下
+func closeSum(sum func(int, int) int, x, y int) func() int {
+	var functionSum = func() int {
+		return sum(x, y)
+	}
+	return functionSum
+}
+
+// 4、这样返回的函数体 functionSum 满足了一个 int 类型返回值无参数的 func() int 类型
+
+func main() {
+	// 5、这个时候，就可以愉快的调用接口 f1 了
+	var functionSum = closeSum(sum, 10, 20)
+	f1(functionSum) // 30
+}
+```
+
+####6.2、示例二：
+
+- 再看下面这个例子，这段代码要想做比较的话，可以写一段JavaScript，效果完全一致
+- 同样，闭包延长了函数里变量`count`的存活时间
+
+```go
+func increment(x int) func() int {
+	var count = 0
+	return func() int {
+		count++
+		fmt.Printf("count:%d,", count)
+		return count + x
+	}
+}
+
+func main() {
+	var add = increment(10)
+	fmt.Println("count+10 =", add()) // count:1,count+10 = 11
+	fmt.Println("count+10 =", add()) // count:2,count+10 = 12
+	fmt.Println("count+10 =", add()) // count:3,count+10 = 13
+	fmt.Println("count+10 =", add()) // count:4,count+10 = 14
+}
+```
+
+#### 6.3、示例三：
+
+```go
+// 添加文件后缀
+func makeSuffixFunc(suffix string) func(string) string {
+	return func(fileName string) string {
+		if !strings.HasSuffix(fileName, suffix) {
+			return fileName + suffix
+		}
+		return fileName
+	}
+}
+
+func main() {
+	var jpgSuffix = makeSuffixFunc(".jpg")
+	var txtSuffix = makeSuffixFunc(".txt")
+	var fileName1 = "1.jpg"
+	var fileName2 = "aaa"
+	var fileName3 = "cc.txt"
+	var fileName4 = "ddd"
+	fmt.Println(jpgSuffix(fileName1)) // 1.jpg
+	fmt.Println(jpgSuffix(fileName2)) // aaa.jpg
+	fmt.Println(txtSuffix(fileName3)) // cc.txt
+	fmt.Println(txtSuffix(fileName4)) // ddd.txt
+}
+```
+
+#### 6.4、示例四：
+
+```go
+// 和第二个例子近似，一个公用的闭包外的变量 base 的变化过程
+// base 这个变量，只要下面的 addBase, subBase != nil，也就是没有释放，它就永远存活着
+func calc(base int) (func(int) int, func(int) int) {
+	var add = func(num1 int) int {
+		base += num1
+		return base
+	}
+	var sub = func(num2 int) int {
+		base -= num2
+		return base
+	}
+	return add, sub
+}
+
+func main() {
+	var addBase, subBase = calc(10) // 给base为10
+	// base + 1 - 2 : 10 => 11 => 9
+	fmt.Println(addBase(1), subBase(2)) // 11 9
+	// base + 3 - 4 : 9 => 12 => 8
+	fmt.Println(addBase(3), subBase(4)) // 12 8
+	// base + 5 - 6 : 8 => 13 => 7
+	fmt.Println(addBase(5), subBase(6)) // 13 7
+}
+```
+
+#### 6.5、闭包的总结：
+
+- 闭包是什么？
+  - **闭包是一个函数，这个函数包含了他外部作用域里的一个变量**
+- JavaScript笔记里闭包的描述：
+  - 理解一：闭包是嵌套的内部函数(绝大部分人这样理解)
+  - 理解二：包含被引用变量(函数)的对象(少数人这样看)
+- 闭包产生的条件：
+  - 函数嵌套
+  - 内部函数引用了外部函数的数据(变量/函数)
+  - 内部函数有没有被调用和有没有产生闭包没有关系
+
+### 7、Go的一些内置函数
+
+####7.1、列个表
+
+| 内置函数         | 描述                                                         |
+| ---------------- | ------------------------------------------------------------ |
+| close            | 主要用来关闭 channel                                         |
+| len              | 用来求长度，如string、array、slice、map、channel             |
+| new              | 分配内存，主要用于分配值类型的内存，int或string、返回对应类型的指针 |
+| make             | 分配内存，主要用来分配引用数据类型，如chan、map、slice       |
+| append           | 追加元素到slice                                              |
+| panic 和 recover | 用来错误处理                                                 |
+
+- 如果`append`第一个参数给了数组会报错:`first argument to append must be slice;`
+
+#### 7.2、简单介绍`panic`和`recover`
+
+```go
+func f1() {
+	fmt.Println("f1()")
+}
+
+func f2() {
+	defer func() { // 在可能出现 panic 的前面加上 defer,写一个立即执行函数 "善后"
+		// recover() 不是太推荐使用，因为既然都是崩溃级的错误了，那接着运行下去程序也不正常了
+		// 这个时候就应该让它崩掉，只不过崩掉前会把 defer 里的代码执行完，这这里面把一些善后工作做完就OK了
+		var err = recover() // recover() 是获取错误信息,而且程序就不崩,而是跳过这段错误代码,接着运行下去了
+		fmt.Println(err)
+	}() // 主要就是把打开的文件释放掉，连接的数据库，打开的网络连接给释放掉，不然会一直占用资源
+	panic("出现严重错误,程序崩溃") // 直接崩溃，程序退出,f3()也不执行了
+	fmt.Println("f2()")  // 下面这句是永远到不了了,panic出现时，这块代码就已经完蛋了
+}
+
+func f3() {
+	fmt.Println("f3()")
+}
+
+func main() {
+	f1()
+	f2()
+	f3()
+}
+
+// 程序执行结果:
+// f1()
+// 出现严重错误,程序崩溃
+// f3()
+
+```
+
+**注意事项：**
+
+- `recover`必须搭配`defer`使用
+- `defer`一定要在可能引发`panic`之前的语句定义
+
+
 
 
 
