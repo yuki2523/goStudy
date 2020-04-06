@@ -21,18 +21,15 @@ var ( // 硬币,存放人名的切片,人名和硬币数对应的map放在全局
 )
 
 func nameParse(name string) (coins int) { // 求这个名字值几个硬币
-	var nameWords = []rune(name)
-	for _, value := range nameWords {
-		if value == rune('e') || value == rune('E') {
+	for _, value := range name {
+		switch {
+		case value == 'e' || value == 'E':
 			coins++
-		}
-		if value == rune('i') || value == rune('I') {
+		case value == 'i' || value == 'I':
 			coins += 2
-		}
-		if value == rune('o') || value == rune('O') {
+		case value == 'o' || value == 'O':
 			coins += 3
-		}
-		if value == rune('u') || value == rune('U') {
+		case value == 'u' || value == 'U':
 			coins += 4
 		}
 	}
