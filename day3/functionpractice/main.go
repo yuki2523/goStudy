@@ -22,14 +22,14 @@ var ( // 硬币,存放人名的切片,人名和硬币数对应的map放在全局
 
 func nameParse(name string) (coins int) { // 求这个名字值几个硬币
 	for _, value := range name {
-		switch {
-		case value == 'e' || value == 'E':
+		switch value {
+		case 'e', 'E':
 			coins++
-		case value == 'i' || value == 'I':
+		case 'i', 'I':
 			coins += 2
-		case value == 'o' || value == 'O':
+		case 'o', 'O':
 			coins += 3
-		case value == 'u' || value == 'U':
+		case 'u', 'U':
 			coins += 4
 		}
 	}
