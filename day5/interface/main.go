@@ -38,4 +38,15 @@ func main() {
 	mul(num1)               // 20
 	mul(txt1)               // abcabc
 
+	var m1 multiplicable          // 这种是被允许的
+	fmt.Printf("%v,%T\n", m1, m1) // <nil>,<nil>
+	m1 = number{100}
+	fmt.Printf("%v,%T\n", m1, m1) // {100},main.number
+	m1 = text{"bbb"}
+	fmt.Printf("%v,%T\n", m1, m1) // {bbb},main.text
+
+	// var n2 = number{200}
+	// fmt.Println(n2)
+	// n2 = text{"ccc"} // 报错,类型问题
+	// fmt.Println(n2)
 }
