@@ -1357,6 +1357,17 @@ fmt.Println(ageList == nil) // true
 // var声明出来的 map 类型数据，由于是引用数据类型，一开始是没有指向任何内存空间的，那么就是 nil
 ```
 
+- **初始化：**
+
+```go
+var studentClass = map[string]string{
+	"hcy":  "JavaScript一班",
+	"ying": "python全栈20班",
+	"yuki": "Vue十班",
+}
+fmt.Println(studentClass) // map[hcy:JavaScript一班 ying:python全栈20班 yuki:Vue十班]
+```
+
 #### 7.2、`make`函数为`map`申请内存空间
 
 - 为了获取有内存空间的`map`数据类型的数据，可以使用`make`函数
@@ -2068,25 +2079,706 @@ func main() {
 
 **注意事项：**
 
-- `recover`必须搭配`defer`使用
+- `recover`必须搭配`defer`使用，而且`defer`后面是一个**立即执行函数**，而不是函数体
 - `defer`一定要在可能引发`panic`之前的语句定义
 
+### 8、分硬币的练习
 
+```go
+package main
 
+import (
+	"fmt"
+)
 
+// 要求
+// 50硬币分给users切片里的人
+// 名字里每有一个'e'或'E'分一个硬币
+// 'i','I'两个
+// 'o','O'三个
+// 'u','U'四个
+// 每个人获得几个硬币,返回值为剩下的硬币数,实现函数 dispatchCoin
 
+var ( // 硬币,存放人名的切片,人名和硬币数对应的map放在全局变量里
+	coins = 50
+	users = []string{
+		"Matthew", "Sarah", "Augustus", "Heidi", "Emilie", "Peter", "Giana", "Adriano", "Aaron", "Elizabeth",
+	}
+	distribution = make(map[string]int, len(users))
+)
 
+func nameParse(name string) (coins int) { // 求这个名字值几个硬币
+	var nameWords = []rune(name)
+	for _, value := range nameWords {
+		if value == rune('e') || value == rune('E') {
+			coins++
+		}
+		if value == rune('i') || value == rune('I') {
+			coins += 2
+		}
+		if value == rune('o') || value == rune('O') {
+			coins += 3
+		}
+		if value == rune('u') || value == rune('U') {
+			coins += 4
+		}
+	}
+	return
+}
 
+func dispatchCoin() int { // 给每个人分硬币，分完后把剩下的硬币数量返回出去
+	var currentUserCoins int
+	var nowCoins = coins
 
+	for _, user := range users {
+		currentUserCoins = nameParse(user)
+		count, ok := distribution[user]
+		if !ok {
+			distribution[user] = currentUserCoins
+		}
+		distribution[user] = count + currentUserCoins
+		nowCoins -= currentUserCoins
+	}
 
+	return nowCoins
+}
 
+func main() {
+	var left = dispatchCoin()
+	fmt.Println(distribution)
+	fmt.Println("剩下: ", left)
+}
 
+```
 
+- 逻辑就上面这样
 
+### 9、递归：算台阶走法的问题
 
+```go
+// 楼梯，一次可以走 1 步，也可以走 2 步，n阶时多少走法
+func floorWays(n uint64) uint64 {
+	if n > 0 {
+		if n == 2 { // 2 阶时
+			// 可以走一步跨上去，也可以走两步，一次性上一阶，两种走法
+			return 2
+		} else if n == 1 { // 1 阶时
+			// 只有一步跨上去的唯一一个选择
+			return 1
+		} else {
+			// 有多阶(>2)时，可以把一次走两步的方法数 floorWays(n - 2)
+			// 和一次走一步的方法数 floorWays(n - 1) 加起来
+			return floorWays(n-1) + floorWays(n-2)
+		}
+	}
+	return 0
+}
+```
 
+## 第四部分：结构体
 
+### 1、类型别名和自定义类型
 
+#### 1.1、自定义类型
 
+- 基于内置已有类型自定义自己的类型
 
+- `type`关键字：用来造类型的
+- 语法:`type 自定义类型名 内置类型名`
 
+```go
+// type关键字用来造类型
+// 由内置 int 造了个 myInt 类型
+type myInt int
+
+func main() {
+	var a myInt = 100
+	fmt.Printf("a,value:%d,type:%T\n", a, a) // a,value:100,type:main.myInt
+	// 类型为 main 包里的 myInt 类型
+}
+```
+
+#### 1.2、类型别名
+
+- 语法:`type 类型别名 = 内置类型名`
+- 内置别名 byte 就是 int8, rune 就是 int32
+
+```go
+// 类型别名
+// 加上 = 号的为类型别名
+type ageInt = int
+
+func main() {
+	var age ageInt = 19
+	fmt.Printf("age,value:%d,type:%T\n", age, age) // age,value:19,type:int
+	// 类型别名,在代码编写中是有效的,代码执行时会换成其真正的名字,这里的ageInt就换成了int
+	// 内置别名 byte 就是 int8, rune 就是 int32
+}
+```
+
+### 2、结构体
+
+#### 2.1、什么是结构体
+
+- 结构体关键字:`struct`
+- 就是Go里的对象
+- 结构体定义方式
+
+```go
+// 定义方式
+type 结构体类型名 struct {
+    字段名 字段类型
+    字段名 字段类型
+    ...
+}
+```
+
+- 类型名：标识自定义结构体的名称，同一包里唯一
+- 字段名：表示结构体字段名，结构体内字段名唯一
+- 字段类型：表示结构体字段的具体类型
+
+```go
+type person struct {
+	name    string
+	age     int
+	gender  string
+	hobbies []string
+}
+
+func main() {
+	// 1、属性值都写全的情况
+	var p1 person
+	p1.name = "hcy"
+	p1.age = 19
+	p1.gender = "男"
+	p1.hobbies = []string{"code", "game", "sleep"}
+	fmt.Printf("p1,type:%T,value:%#v\n", p1, p1)
+	// p1,type:main.per	son,value:main.person{name:"hcy", age:19, gender:"男", hobbies:[]string{"code", "game", "sleep"}}
+
+	// 2、只写一个属性值的情况
+	var p2 person
+	p2.name = "ying"
+	fmt.Println(p2.age)            // 0
+	fmt.Println(p2.gender == "")   // true
+	fmt.Println(p2.hobbies == nil) // true
+	// 可以发现,结构体使用 var 声明出来后
+	// int 类型的属性，默认值为 0
+	// string 类型的属性，默认值为 "" 空字符串
+	// slice 引用数据类型的属性, 默认值为 nil
+}
+```
+
+**上面写的是有名字的结构体，下面说一下匿名结构体**
+
+- 一般用于一次性使用的结构体，为了不占用全局的类型命名而使用的
+
+```go
+func main() {
+	// 匿名结构体，在只用一次的时候用
+	var s struct {
+		x string
+		y int
+	}
+	s.x = "aaa"
+	s.y = 10
+	fmt.Printf("s,type:%T,value:%v\n", s, s) // s,type:struct { x string; y int },value:{aaa 10}
+}
+```
+
+- 还可以这样写
+
+```go
+var style = struct {
+	color      string
+	fontSize   string
+	fontWeight string
+}{"red", "32px", "30px"} // 直接给一个结构体实例化，一次性使用的时候可以这样写
+
+fmt.Println(style) // {red 32px 30px}
+```
+
+#### 2.2、结构体是值类型
+
+```go
+func personChange(p person) {
+	p.name = "ying"
+}
+
+func personChangePointer(p *person) {
+	// (*p).name = "huachenyang"
+	p.name = "huachenyang" // 简写成这样也可以，Go会自动判断是否为指针并取值
+}
+
+type person struct {
+	name   string
+	age    int
+	gender string
+}
+
+func main() {
+	var p1 person
+	p1.name = "hcy"
+	p1.age = 19
+	p1.gender = "男"
+	fmt.Println(p1) // {hcy 19 男}
+	personChange(p1)
+	fmt.Println(p1) // {hcy 19 男}
+	personChangePointer(&p1)
+	fmt.Println(p1) // {huachenyang 19 男}
+	// 直接传入 person 实例对象并没有成功修改,证明了结构体为值类型的
+	// 传入指针的话，肯定是达成修改的，重点就是结构体为值类型
+}
+```
+
+#### 2.3、获取结构体指针的方法和结构体初始化
+
+- 下面三种,p2、p3、p4都是一个指针，类型是`*main.person`
+- 注意一点：`person{...}`是初始化一个结构体，里面可以写任意已有个数的字段
+- 那么`&person{...}`就可以在初始化结构体的同时获取这个结构体的指针
+
+```go
+type person struct {
+	name   string
+	age    int
+	gender string
+}
+
+func main() {
+	// 获取结构体指针的方法
+	// 1、new 一个，因为是值类型，所以用 new
+	var p2 = new(person)             // p2 是一个指针,指向一个person类型变量(结构体)
+	fmt.Printf("p2:type:%T\n", p2)   // p2:type:*main.person
+	fmt.Printf("p2指向值的地址值:%p\n", p2) // p2指向值的地址值:0xc0000a63c0
+	// 但是这种方式初始化起来会比较麻烦，还要一个个的写
+
+	// 2、类似字面量直接定义并初始化的方式
+	// 语法：&person{...}
+	var p3 = &person{
+		name:   "ying",
+		age:    16,
+		gender: "男",
+	}
+	fmt.Printf("%T\n", p3)   // *main.person
+	fmt.Printf("%#v\n", *p3) // main.person{name:"ying", age:16, gender:"男"}
+
+	// 3、这种简单的写法里还可以直接省略字段名，不过这样的话必须按照定义时字段顺序写下来
+	var p4 = &person{
+		"yuki",
+		14,
+		"女",
+	}
+	fmt.Printf("%T\n", p4)   // *main.person
+	fmt.Printf("%#v\n", *p4) // main.person{name:"yuki", age:14, gender:"女"}
+}
+
+```
+
+#### 2.4、结构体里字段的地址值是紧挨着的
+
+- 下面用的最简单的`int8`进行测试的
+- 但是不同的字段的属性，它们的地址值排列也会有所不同
+- 想要详细了解的话，可以去百度**Go中的内存对齐**
+
+```go
+func main() {
+	// 结构体里的字段的地址值是紧挨着的
+	var test struct {
+		a int8
+		b int8
+		c int8
+	}
+	test.a = 1
+	test.b = 2
+	test.c = 3
+	fmt.Println(&test.a) // 0xc0000100f8
+	fmt.Println(&test.b) // 0xc0000100f9
+	fmt.Println(&test.c) // 0xc0000100fa
+}
+
+```
+
+#### 2.5、自己写构造函数构造结构体
+
+- 可以返回结构体，也可以返回结构体指针
+- 如果返回的是结构体，那接收后的变量的值就是整个结构体，变量会变的很重
+- 如果返回的是结构体指针，那么接收后的变量只存了一个地址值，每次使用时再从地址值取值
+- 两种各有优劣吧，我个人比较倾向于使用结构体指针
+
+```go
+type person struct {
+	name   string
+	age    int
+	gender string
+}
+
+// 我个人比较倾向于使用结构体指针
+func newPerson(name string, age int, gender string) *person {
+	return &person{
+		name:   name,
+		age:    age,
+		gender: gender,
+	}
+}
+
+func main() {
+	var p1 = newPerson("hcy", 19, "男") // 这时的 p1 是结构体指针
+	fmt.Printf("%#v\n", *p1)      // main.person{name:"hcy", age:19, gender:"男"}
+	fmt.Printf("%T,%p\n", p1, p1) // *main.person,0xc000068330
+}
+```
+
+#### 2.6、结构体的方法
+
+- 上面的内容讲述了怎么给结构体写入属性这些
+- 但是一个对象光有属性，是不是还少了点什么？肯定还是要有方法的
+- 接下来讲述的就是结构体定义方法的方式
+
+```go
+func (接收者变量 接收者类型) 方法名(参数) (返回值) {
+    函数体
+}
+```
+
+- 规定的语法就是这样写的
+- 接收者变量，类似于`this`，`self`，一般推荐写成接收者类型的首字母,比如(p person)
+- 接收者还分为指针接收者和值接收者，下面会用一个专题专门讲这些内容
+- 为了方便展示方法的使用，下面使用的是值接收者，而且不涉及结构体实例中值的增删改
+
+```go
+type person struct {
+	name   string
+	age    int
+	gender string
+}
+
+func (p person) sayName() {
+	fmt.Println(p.name)
+}
+
+func (p person) isAdult() bool {
+	return p.age >= 18
+}
+
+func main() {
+	var p1 = person{
+		name:   "hcy",
+		age:    19,
+		gender: "男",
+	}
+	p1.sayName()                // hcy
+	fmt.Println(p1.isAdult()) // true
+}
+```
+
+#### 2.7、指针接收者和值接收者
+
+##### 2.7.1、指针接收者
+
+**适用场景：**
+
+1. 需要修改调用该方法的实例里的值
+2. 调用该方法的实例较大,再拷贝一份会占用较大的内存空间
+3. 保证这个类型的结构体方法的一致性,只要有一个方法适用了指针接收者,别的也都用指针接收者
+
+**补充说明：**
+
+1. 结构体的指针接收者,如 (p *person)，这样写的话,person实例在调用这个方法时,传入的p是它的指针
+2. Go里指针类型的结构体变量，在取它指向的值时，就算前面不带上`*`，它也会自动取它指向的值
+   1. 如`(*p).age`和`p.age`，都可以取到值
+
+```go
+type person struct {
+	name   string
+	age    int
+	gender string
+}
+
+// 结构体的指针接收者
+func (p *person) ageChange(newAge int) {
+	// (*p).age = newAge // 可以简写为下面这种
+	p.age = newAge
+}
+
+func main() {
+	var p1 = person{
+		name:   "hcy",
+		age:    19,
+		gender: "男",
+	}
+	fmt.Println(p1.age) // 19
+	// 结构体的指针接收者, (p *person)，这样写的话,person实例在调用这个方法时,传入的p是它的指针
+	p1.ageChange(20)
+	fmt.Println(p1.age) // 20
+}
+
+```
+
+#### 2.8、自定义类型实现给`string`类型添加方法
+
+- 现在这个场景为给每个 string 类型的变量添加方法
+- 让它们都可以打招呼
+- 但是 string 并非当前 main 包里的方法,无法直接使用 (s *string) 这样的函数去定义方法
+- 那么 自定义类型 就可以帮我们达成这个需求
+
+```go
+type myString string
+
+func (m myString) hello() {
+	fmt.Println("Hello I'm", m)
+}
+
+func main() {
+	var str = myString("测试字符串")
+	str.hello() // Hello I'm 测试字符串
+}
+```
+
+- 那么如果给`int`,`bool`等别的属性去实现统一的方法添加，和上面的例子大同小异
+
+#### 2.9、结构体匿名字段和初始化时的简写
+
+```go
+// 匿名字段的情况时,直接把类型名识别为了字段名
+// 绝对不推荐使用这种东西!!!
+type person struct {
+	string
+	int
+	bool
+}
+
+type student struct {
+	id   int
+	name string
+}
+
+func main() {
+	var p1 = person{
+		"hcy",
+		19,
+		true,
+	}
+	fmt.Printf("p1:%#v\n", p1) // p1:main.person{string:"hcy", int:19, bool:true}
+	fmt.Println(p1.string)     // hcy
+	fmt.Println(p1.int)        // 19
+	fmt.Println(p1.bool)       // true
+
+	p1.int = 20
+	fmt.Println(p1) // {hcy 20 true}
+
+	// 字段名和变量名同名,直接写一个字段名就OK了,这点和JS一样
+	var id = 1
+	var name = "ying"
+	var stu1 = student{
+		id,
+		name,
+	}
+	fmt.Println(stu1)
+}
+
+```
+
+#### 2.10、结构体嵌套
+
+##### 2.10.1、结构体嵌套的一般写法
+
+```go
+type person struct {
+	name   string
+	age    int
+	gender string
+	detail personDetail
+}
+
+type personDetail struct {
+	city     string
+	school   string
+	birthday string
+	job      string
+}
+
+func main() {
+	var (
+		name   = "hcy"
+		age    = 19
+		gender = "男"
+		detail = personDetail{
+			city:     "芜湖市",
+			school:   "安工程",
+			birthday: "8月18",
+			job:      "学生",
+		}
+		p1 = person{
+			name,
+			age,
+			gender,
+			detail,
+		}
+	)
+
+	// 上面这就是最基本的嵌套方式,取嵌套结构体里的值时,一层层的点下去就行了,修改也是一样的
+	fmt.Printf("%#v\n", p1)
+	// main.person{name:"hcy", age:19, gender:"男", detail:main.personDetail{city:"芜湖市", school:"安工程", birthday:"8月18", job:"学生"}}
+	fmt.Println(p1.detail.job) // 学生
+	p1.detail.job = "程序员"
+	fmt.Println(p1.detail.job) // 程序员
+}
+
+```
+
+##### 2.10.2、嵌套匿名结构体
+
+```go
+type person struct {
+	name         string
+	age          int
+	gender       string
+	personDetail // 直接使用匿名字段的方式
+}
+
+type personDetail struct {
+	city     string
+	school   string
+	birthday string
+	job      string
+}
+
+func main() {
+	var p1 = person{
+		name:   "hcy",
+		age:    19,
+		gender: "男",
+		personDetail: personDetail{
+			city:     "芜湖市",
+			school:   "安工程",
+			birthday: "8月18",
+			job:      "学生",
+		},
+	}
+
+	fmt.Printf("%#v\n", p1)
+	// main.person{name:"hcy", age:19, gender:"男", detail:main.personDetail{city:"芜湖市", school:"安工程", birthday:"8月18", job:"学生"}}
+
+	// 匿名字段的方式和一般写法的区别就在于
+	// 匿名字段不仅使用多个点可以点出来,而且直接使用一个点,也可以点出来
+
+	fmt.Println(p1.personDetail.job) // 学生
+	p1.personDetail.job = "程序员"
+	fmt.Println(p1.personDetail.job) // 程序员
+
+	// 这就是使用一个点把字段点出来的例子，同样可以进行取值和修改
+	fmt.Println(p1.city) // 芜湖市
+	p1.city = "六安市"
+	fmt.Println(p1.city) // 芜湖市
+}
+
+```
+
+**如果嵌套了两个结构体匿名字段，而且这两个被嵌套的结构体内有同样的字段，那么只能按部就班的一个个的按嵌套顺序点出来了，没有简便写法了**
+
+### 3、结构体模拟(假)继承
+
+- 使用**结构体匿名字段**实现一个类型JavaScript里的prototype
+- 本质上是达不到的，看着像，但是不得精髓
+
+```go
+type object struct {
+	protoField string
+}
+
+type person struct {
+	name   string
+	age    int
+	gender string
+	object
+}
+
+func (o object) hello() {
+	fmt.Println(o) // {object字段}
+	fmt.Println("Hello 这是object里方法hello")
+}
+
+func main() {
+	var p1 = person{
+		name:   "hcy",
+		age:    19,
+		gender: "男",
+	}
+	p1.protoField = "object字段"
+
+	p1.hello() // Hello 这是object里方法hello
+	// 虽然 person 实例确实是点出了 object 类的方法,但是这和JS里的prototype有着本质的差别
+	// 首先,无法让 object 类里的,也就是继承的类拿到传递进去的实例,也就是this是只能点出 object 实例里的数据
+	// 虽然是可以在 person 类的实例里使用 object 类的方法和属性,但是方法中无法完全获取当前对象,就略显鸡肋了
+}
+```
+
+### 4、结构体与JSON
+
+- 序列化:`json.Marshal(结构体实例)`
+  - 第一个返回值为 []byte 格式的字符串切片,可以使用 string 强制转换
+  - 第二个返回值为错误信息对象,如果没错,也就是序列化成功,那么其值为 nil
+- 反序列化:`json.Unmarshal([]byte(string类型json字符串), 格式匹配的结构体实例地址值)`
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// 由于Go里把包里的变量或方法向外开放,需要首字母大写
+// 那么想要指定这个变量名在相应格式的文件里以什么样的形式呈现
+// 可以在后面接上 `格式:"呈现形式"`,如下面的 `json:"name"`,在json格式里字段名Name解析为name
+type person struct {
+	Name   string `json:"name"`
+	Age    int    `json:"age"`
+	Gender string `json:"gender"`
+	Ok     bool   `json:"ok"`
+}
+
+var (
+	jsonStr = `{"name":"hcy","age":19,"gender":"男","ok":true}`
+	jsonArr = `[1,2,3,"abc","你好"]` // 问题:Go里可以解析这种JSON字符串吗?
+)
+
+func main() {
+	// fmt.Println(jsonStr)
+	fmt.Println(jsonArr)
+	// json.Marshal 序列化：结构体 => json字符串
+	// json.Unmarshal 反序列化：json字符串 => 结构体
+
+	var p1 = person{
+		Name:   "hcy",
+		Age:    19,
+		Gender: "男",
+		Ok:     true,
+	}
+
+	var strP1, err = json.Marshal(p1)
+	// json.Marshal(结构体实例)
+	// 第一个返回值为 []byte 格式的字符串切片,可以使用 string 强制转换
+	// 第二个返回值为错误信息对象,如果没错,也就是序列化成功,那么其值为 nil
+	if err != nil {
+		fmt.Printf("序列化失败:%v\n", err)
+	} else {
+		fmt.Printf("%v\n", string(strP1))     // {"name":"hcy","age":19,"gender":"男","ok":true}
+		fmt.Println(string(strP1) == jsonStr) // true
+	}
+
+	var p2 person
+	fmt.Printf("%v\n", p2) // { 0  false}
+	// 使用反序列化时,必须先声明一个 person 格式结构体出来,也就是实例化一个出来
+	json.Unmarshal([]byte(jsonStr), &p2)
+	// json.Unmarshal([]byte(string类型json字符串), 格式匹配的结构体实例地址值)
+	// 第一个参数是 []byte 格式字符串切片,把 string 用 []byte 强制转换就OK了
+	// 第二个参数是提前声明好的格式相匹配的结构体实例的地址值
+	// 之后那个结构体实例就获取了json字符串解析(反序列化)后的值
+	fmt.Printf("%#v\n", p2) // main.person{Name:"hcy", Age:19, Gender:"男", Ok:true}
+}
+
+```
+
+**注意的点：**
+
+- 结构体里的字段名首字母需要大写，不然别的包(也是当前结构体所在的包之外的包)是访问不到的
