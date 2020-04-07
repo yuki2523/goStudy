@@ -47,10 +47,15 @@ func main() {
 	var p2 person
 	fmt.Printf("%v\n", p2) // { 0  false}
 	// 使用反序列化时,必须先声明一个 person 格式结构体出来,也就是实例化一个出来
-	json.Unmarshal([]byte(jsonStr), &p2)
+	var unmarshalErr = json.Unmarshal([]byte(jsonStr), &p2)
 	// json.Unmarshal([]byte(string类型json字符串), 格式匹配的结构体实例地址值)
 	// 第一个参数是 []byte 格式字符串切片,把 string 用 []byte 强制转换就OK了
 	// 第二个参数是提前声明好的格式相匹配的结构体实例的地址值
+	// 返回值为错误信息,如果没错就是 nil ,错了就是错误信息
 	// 之后那个结构体实例就获取了json字符串解析(反序列化)后的值
-	fmt.Printf("%#v\n", p2) // main.person{Name:"hcy", Age:19, Gender:"男", Ok:true}
+	if unmarshalErr != nil {
+		fmt.Println(unmarshalErr)
+	} else {
+		fmt.Printf("%#v\n", p2) // main.person{Name:"hcy", Age:19, Gender:"男", Ok:true}
+	}
 }
