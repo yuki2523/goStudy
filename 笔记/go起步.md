@@ -2782,3 +2782,360 @@ func main() {
 **注意的点：**
 
 - 结构体里的字段名首字母需要大写，不然别的包(也是当前结构体所在的包之外的包)是访问不到的
+
+##第五部分：接口类型专题
+
+### 1、接口(interface)
+
+#### 1.1、接口的概念引入
+
+**下面几种场景：**
+
+- 超市支付时，支持微信、支付宝、银联、以及现金，不管它是什么方式，统一归类为"支付方式"去处理
+- 三角形、四边形、圆形等等一些几何图形，去算周长和面积时，也不管它们具体是哪种图形，全部归类为"图形"去处理
+
+**那么在Go里是什么样的呢？**
+
+- `fmt.Println`，不管是什么类型的，它只管把数据打印出来
+- 那么，如果我定义了几种不同的结构体，它们都定义了一个同名方法，之后我再定义一个函数，这个函数不管传入的结构体类型是哪种，只管调用结构体里的这个方法，该如何去处理呢？
+
+**Go提供的方案就是接口(interface)类型：**
+
+- 这个类型要区别于之前所有遇到的类型，它是个抽象的类型
+- 看到接口类型的数据时，你不知道它是什么，但是你知道通过它的方法可以做什么
+
+#### 1.2、接口的基本概率
+
+- 时刻不要忘记：**接口也是一种类型**，是一种特殊的类型，它规定了变量有哪些方法
+- 适用场景：
+  - 不关心变量它是什么类型，只关心能调用它的什么方法
+
+#### 1.3、下面这个例子来基本感知一下接口类型
+
+```go
+// multiplicable 这个接口类型,允许实现了 multiply 方法的数据类型使用
+type multiplicable interface {
+	multiply() // 方法标签
+}
+
+type number struct {
+	value int
+}
+
+// number 类型实现的 multiply 方法
+// 打印出结构体里 value int 值二倍的结果
+func (n number) multiply() {
+	fmt.Println(n.value * 2)
+}
+
+type text struct {
+	value string
+}
+
+// text 类型实现的 multiply 方法
+// 打印出结构体里 value string 值的两倍长度的字符串
+func (t text) multiply() {
+	fmt.Println(t.value + t.value)
+}
+
+func mul(structure multiplicable) {
+	structure.multiply()
+}
+
+func main() {
+	var num1 = number{10}
+	var txt1 = text{"abc"}
+	fmt.Println(num1, txt1) // {10} {abc}
+	mul(num1)               // 20
+	mul(txt1)               // abcabc
+
+    var m1 multiplicable          // 这种是被允许的
+	fmt.Printf("%v,%T\n", m1, m1) // <nil>,<nil>
+	m1 = number{100}
+	fmt.Printf("%v,%T\n", m1, m1) // {100},main.number
+	m1 = text{"bbb"}
+	fmt.Printf("%v,%T\n", m1, m1) // {bbb},main.text
+
+	// var n2 = number{200}
+	// fmt.Println(n2)
+	// n2 = text{"ccc"} // 报错,类型问题
+	// fmt.Println(n2)
+}
+```
+
+- 如果没有实现`multiply`方法的结构体，是无法作为`multiplicable`这个接口类型被函数`mul(structure multiplicable){...}`调用的
+- 如果使用没有`multiply`方法的结构体，调用时直接报错，报错信息为无法作为`multiplicable`被调用，因为没有`multiply`方法
+- **接口类型的数据可以别声明出来，刚刚声明出来时，值为`nil`，之后可以给它赋值为满足这个接口的任意类型，这个变量很灵活，不能再以以往的类型固定不变去理解，它是类型是可以变换的**
+
+#### 1.4、接口的定义
+
+```go
+type 接口名 interface {
+    方法名1(参数...) (返回值...)
+    方法名2(参数...) (返回值...)
+    ...
+}
+```
+
+```go
+type animal interface {
+	move()
+	eat(string) string
+}
+
+type rabbit struct {
+	name string
+	feet int
+}
+
+type chicken struct {
+	feet int
+}
+
+func (r rabbit) move() {
+	fmt.Println("兔子在跳")
+}
+
+func (r rabbit) eat(food string) string {
+	fmt.Printf("兔子%s在吃%s\n", r.name, food)
+	return "兔子的排泄物"
+}
+
+func (c chicken) move() {
+	fmt.Println("鸡在飞")
+}
+
+func (c chicken) eat(food string) string {
+	fmt.Printf("鸡在吃%s\n", food)
+	return "鸡蛋"
+}
+
+func main() {
+	var r1 = rabbit{"小白兔", 4}
+	var c1 = chicken{2}
+
+	// 接口类型的变量声明出来后,分为两个部分,一个部分是存值,另一部分存数据类型
+	// 存值实际是在存一个值的内存地址,根据内存地址取值
+	// 因此接口类型的变量很灵活,它可以存储任何符合这个接口类型条件的值
+	var an1 animal
+	var an2 = an1
+	fmt.Printf("%#v,%T\n", an1, an1) // <nil>,<nil>
+	fmt.Printf("%#v,%T\n", an2, an2) // <nil>,<nil>
+
+	an1 = r1
+	fmt.Printf("%#v,%T\n", an1, an1) // main.rabbit{name:"小白兔", feet:4},main.rabbit
+	fmt.Printf("%#v,%T\n", an2, an2) // <nil>,<nil>
+
+	an1 = c1
+	fmt.Printf("%#v,%T\n", an1, an1) // main.chicken{feet:2},main.chicken
+	fmt.Printf("%#v,%T\n", an2, an2) // <nil>,<nil>
+}
+```
+
+**简单总结：**
+
+- 接口类型的变量声明出来后,分为两个部分,一个部分是存值,另一部分存数据类型
+- 存值实际是在存一个值的内存地址,根据内存地址取值
+- 因此接口类型的变量很灵活,它可以存储任何符合这个接口类型条件的值
+- 接口的函数(方法)，必须严格匹配，有几个的参数，几个的返回值，值的类型，都要写清楚，不然都不符合条件
+
+#### 1.5、指针接收者实现接口和值接收者实现接口的区别
+
+```go
+type animal interface {
+	move()
+	eat(string) string
+}
+
+type chichen struct {
+	feet int
+}
+
+func (c *chichen) move() {
+	fmt.Println("鸡在飞")
+}
+
+func (c *chichen) eat(food string) string {
+	fmt.Printf("鸡在吃%s\n", food)
+	return "鸡蛋"
+}
+
+func main() {
+	var an1 animal
+	// var ch1 = chichen{2}
+	var ch2 = &chichen{2}
+
+	// 当方法为指针接收者时,interface类型的变量只能存地址值了
+	// an1 = ch1
+	// 报错,报错信息如下
+	// cannot use ch1 (type chichen) as type animal in assignment:
+	// chichen does not implement animal (eat method has pointer receiver)
+	an1 = ch2
+	fmt.Printf("%#v,%T\n", an1, an1)
+}
+```
+
+- 方法为值类型接收者：interface类型变量存满足条件类型变量的指针或值都可以
+- 方法为指针类型接收者：interface类型变量只能存满足条件类型变量的指针
+
+#### 1.6、多个接口和接口嵌套
+
+- 前面说的接口，都是一个接口对应多个结构体类型
+- 一个结构体类型也可以对应多个接口
+- 同时接口还可以嵌套，而且写法和`struct`嵌套几乎相同
+
+```go
+type animal interface {
+	mover
+	eater
+}
+
+type mover interface {
+	move()
+}
+
+type eater interface {
+	eat(string) string
+}
+
+type chicken struct {
+	feet int
+}
+
+func (c chicken) move() {
+	fmt.Println("鸡在飞")
+}
+
+func (c chicken) eat(food string) string {
+	fmt.Printf("鸡在吃%s\n", food)
+	return "鸡蛋"
+}
+
+func main() {
+	var (
+		an1 animal
+		// an2 animal
+		// an3 animal
+		m1 mover
+		e1 eater
+	)
+
+	var c1 = chicken{2}
+	m1 = c1
+	e1 = c1
+	fmt.Printf("%#v,%T\n", m1, m1) // main.chicken{feet:2},main.chicken
+	fmt.Printf("%#v,%T\n", e1, e1) // main.chicken{feet:2},main.chicken
+	// fmt.Println(m1 == e1) // 类型不同,无法比较
+
+	an1 = c1
+	// an2 = m1 // 报错,报错信息大意是 mover 类型缺少 eat 方法
+	// an3 = e1 // 报错,报错信息大意是 eater 类型缺少 move 方法
+	fmt.Printf("%#v,%T\n", an1, an1) // main.chicken{feet:2},main.chicken
+	// fmt.Printf("%#v,%T\n", an2, an2)
+	// fmt.Printf("%#v,%T\n", an3, an3)
+
+	fmt.Println(an1 == m1) // true
+	fmt.Println(an1 == e1) // true
+	// 这两个 true 说明一点,被嵌套的和外层接口类型是兼容的
+}
+
+```
+
+- 被嵌套的接口类型和外层接口类型之间相兼容
+
+#### 1.7、空接口
+
+- 一个接口类型，里面不匹配任何方法，换句话说，空接口可以匹配任何数据类型
+- 空接口也没有有类型名称的必要，之间`interface{}`即可
+- 例如`fmt.Println`的参数的写法：`func Println(a ...interface{})`
+- **特点：所有类型的数据都满足空接口类型，那么空接口变量可以存储任何类型的数据**
+- 注意一点：不要为了使用空接口而使用空接口，当要对2个或2个以上的数据类型的数据进行相同的操作时，才会用上空接口类型
+
+##### 1.7.1、空接口的适用场景一：一个map里需要存多个类型的值
+
+- 类似实现python里的`dict`
+
+```go
+// 1、空接口的使用场景之一, map
+// 可以类似实现 python 里的 dict字典
+var self = make(map[string]interface{}, 10)
+self["name"] = "hcy"
+self["age"] = 19
+self["gender"] = "男"
+self["married"] = false
+self["hobbies"] = []string{"code", "game", "music"}
+
+fmt.Printf("%#v\n", self)
+// map[string]interface {}{"age":19, "gender":"男", "hobbies":[]string{"code", "game", "music"}, "married":false, "name":"hcy"}
+fmt.Printf("%T\n", self) // map[string]interface {}
+```
+
+##### 1.7.2、空接口适用场景二：一个函数可以对不同类型的数据做类似处理
+
+- 下面这个函数，把输入的内容打印，可以接收任何数据类型的参数
+
+```go
+// 2、空接口适用场景之二, 可以接收任何数据类型的函数参数
+func dataPrinter(data interface{}) {
+	fmt.Println(data)
+}
+
+func main() {
+	dataPrinter(100)   // 100
+	dataPrinter("aaa") // aaa
+	dataPrinter(true)  // true
+}
+```
+
+##### 1.7.3、断言判断类型
+
+```go
+// 3、断言判断空接口传入的数据类型
+func typeGetter(noType interface{}) {
+	var data, ok = noType.(string)
+	// 空接口类型可以使用 `变量.(datatype)`,type是一个具体的类型,它有两个返回值
+	// 如果正确,第二个返回值 ok 为 true,错误则为 false
+	// 正确时,第一个返回值 data 就是当前对应类型的值,也就是从空接口类型转回它实际对应的类型
+	// 错误时,就是 datatype 类型对应的 0 值,int：0,string："",bool：false,引用数据类型: nil
+	fmt.Println(data, ok)
+}
+```
+
+```go
+// 4、断言判断类型在 switch case 版本里的特别使用方法
+func typePrinter(noType interface{}) {
+	switch data := noType.(type) {
+	case string:
+		fmt.Printf("string:%#v,%T\n", data, data)
+	case bool:
+		fmt.Printf("bool:%#v,%T\n", data, data)
+	case int:
+		fmt.Printf("int:%#v,%T\n", data, data)
+	case uint:
+		fmt.Printf("uint:%#v,%T\n", data, data)
+	case []int:
+		fmt.Printf("slice:[]int:%#v,%T\n", data, data)
+	case map[string]int:
+		fmt.Printf("map[string]int:%#v,%T\n", data, data)
+	case func():
+		fmt.Printf("func():%T\n", data)
+	case [2]int:
+		fmt.Printf("array:[2]int:%#v,%T\n", data, data)
+	}
+}
+
+func main() {
+	// 4、第四个使用场景的测试
+	typePrinter("aaa")          // string:"aaa",string
+	typePrinter(true)           // bool:true,bool
+	typePrinter(10)             // int:10,int
+	typePrinter(uint(10))       // uint:0xa,uint
+	typePrinter([]int{1, 2, 3}) // slice:[]int:[]int{1, 2, 3},[]int
+	typePrinter(map[string]int{ // map[string]int:map[string]int{"ying":16, "yuki":14},map[string]int
+		"ying": 16,
+		"yuki": 14,
+	})
+	typePrinter(func() {})    // func():func()
+	typePrinter([2]int{1, 2}) // array:[2]int:[2]int{1, 2},[2]int
+}
+```
